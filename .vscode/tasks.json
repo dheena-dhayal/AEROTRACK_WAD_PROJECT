@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Dev Server (npm run dev)",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "Run Automated Tests (npm test)",
+      "type": "npm",
+      "script": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify Database Connection (npm run db:check)",
+      "type": "npm",
+      "script": "db:check",
+      "problemMatcher": []
+    },
+    {
+      "label": "Seed Flights & Airlines (npm run seed)",
+      "type": "npm",
+      "script": "seed",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run ESLint (npm run lint)",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": []
+    }
+  ]
+}
