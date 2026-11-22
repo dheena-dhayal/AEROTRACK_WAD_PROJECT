@@ -562,6 +562,14 @@ export async function systemPage(ctx) {
   on(cpsSlot, 'click', '[data-toggle-cp]', async (_e, btn) => {
     const c = checkpoints.find((x) => x.id === btn.closest('[data-cp]').dataset.cp);
     if (!c) return;
+    if (c.active) {
+      const ok = await confirmDialog({
+        title: `Deactivate checkpoint ${c.code}?`,
+        body: `Deactivating "${c.name}" (${c.code}) will prevent staff from recording new baggage scans at this station until reactivated.`,
+        confirmLabel: 'Deactivate',
+      });
+      if (!ok) return;
+    }
     try {
       await withBusy(btn, patch(`/checkpoints/${c.id}`, { active: !c.active }));
       void loadCps();

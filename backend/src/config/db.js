@@ -17,6 +17,7 @@ mongoose.set('strictQuery', true);
 // numbers and enums before it reaches a query.
 
 export async function connectDatabase(uri, dbName) {
+  if (mongoose.connection.readyState === 1) return;
   const safe = redactMongoUri(uri);
   try {
     await mongoose.connect(uri, { dbName, serverSelectionTimeoutMS: 10_000, autoIndex: true });

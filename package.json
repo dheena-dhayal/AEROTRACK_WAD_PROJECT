@@ -12,7 +12,12 @@
     "start": "npm run start -w backend",
     "build": "echo \"No build step: the client is plain HTML, CSS and JavaScript served by the Node.js server.\"",
     "lint": "eslint .",
+    "test": "node --test shared-utils/test/*.test.js backend/test/*.test.js",
+    "test:shared": "npm test -w shared-utils",
+    "test:backend": "npm test -w backend",
     "seed": "npm run seed -w backend",
+    "seed:checkpoints": "npm run seed:checkpoints -w backend --",
+    "set-role": "npm run set-role -w backend --",
     "db:check": "npm run db:check -w backend"
   },
   "engines": {
