@@ -11,7 +11,7 @@ import { homeFor } from '../lib/format.js';
 import { logo, themeToggle, soundToggle } from './common.js';
 import { openTour, tourDone } from './tour.js';
 
-export const GITHUB_URL = 'https://github.com/SANJIVVV/AeroTrack';
+export const GITHUB_URL = 'https://github.com/dheena-dhayal/AEROTRACK_WAD_PROJECT';
 
 /* ------------------------------- Public layout ------------------------------ */
 

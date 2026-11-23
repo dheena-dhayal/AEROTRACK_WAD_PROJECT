@@ -204,6 +204,8 @@ AEROTRACK_WAD_PROJECT/
 │   └── index.js                     # Vercel Serverless Function entry point adapter
 ├── backend/                         # Node.js + Express 5 Server Workspace
 │   ├── package.json                 # Backend dependencies and execution scripts
+│   ├── server.js                    # Convenience server entry point (imports src/index.js)
+│   ├── seed.js                      # Convenience seed runner (imports src/scripts/seedDirectory.js)
 │   ├── src/
 │   │   ├── index.js                 # HTTP server entry point and background sweeper
 │   │   ├── app.js                   # Express application setup, CSP, CORS, routes
@@ -212,11 +214,30 @@ AEROTRACK_WAD_PROJECT/
 │   │   ├── config/
 │   │   │   ├── db.js                # Mongoose connection manager and ping diagnostics
 │   │   │   └── env.js               # Zod-validated environment schema and URI redaction
-│   │   ├── middleware/
+│   │   ├── controllers/             # Express MVC Request/Response Controllers
+│   │   │   ├── index.js             # Unified controller export registry
+│   │   │   ├── adminController.js   # Analytics, user RBAC, and audit log handlers
+│   │   │   ├── airlineController.js # Airline directory queries
+│   │   │   ├── alertController.js   # Anomaly alert queries and status patching
+│   │   │   ├── authController.js    # Registration, OTP verification, login, logout
+│   │   │   ├── baggageController.js # Luggage listing, registration, QR SVG, status
+│   │   │   ├── checkpointController.js # Station listing and admin setup
+│   │   │   ├── flightController.js  # Flight roster queries and manual entries
+│   │   │   ├── healthController.js  # Liveness and readiness health probes
+│   │   │   ├── incidentController.js # Baggage claim incident filing & resolution
+│   │   │   ├── notificationController.js # User inbox notifications
+│   │   │   ├── scanController.js    # Barcode scanning and recent scan stream
+│   │   │   └── userController.js    # Profile updates and password changes
+│   │   ├── middleware/              # Express Middleware Pipeline
+│   │   │   ├── index.js             # Central middleware exports
 │   │   │   ├── auth.js              # Session cookie verification and role checks
+│   │   │   ├── authMiddleware.js    # Named alias for authentication middleware
 │   │   │   ├── error.js             # Global error handler and not-found response
-│   │   │   └── security.js          # Helmet, CSRF protection, and rate limiters
+│   │   │   ├── errorMiddleware.js   # Named alias for error middleware
+│   │   │   ├── security.js          # Helmet, CSRF protection, and rate limiters
+│   │   │   └── securityMiddleware.js # Named alias for security middleware
 │   │   ├── models/                  # Mongoose Schemas & Data Models
+│   │   │   ├── index.js             # Unified model export index
 │   │   │   ├── Airline.js           # Airline catalog model
 │   │   │   ├── AnomalyAlert.js      # Detected anomaly alert model
 │   │   │   ├── AuditEvent.js        # Security and operational audit trail
@@ -229,38 +250,40 @@ AEROTRACK_WAD_PROJECT/
 │   │   │   ├── OtpChallenge.js      # 6-digit OTP verification challenges
 │   │   │   ├── PredictionRecord.js  # Historical delay risk snapshot model
 │   │   │   ├── Session.js           # Authenticated user session model
-│   │   │   ├── User.js              # User account model (hashed passwords)
-│   │   │   └── index.js             # Unified model export index
-│   │   ├── routes/                  # Express API Route Controllers
-│   │   │   ├── admin.js             # Analytics, user management, and system config
-│   │   │   ├── airlines.js          # Airline directory lookups
-│   │   │   ├── alerts.js            # Anomaly alert query and status resolution
-│   │   │   ├── auth.js              # Registration, login, OTP verification, password reset
-│   │   │   ├── baggage.js           # Baggage registration, lookups, and QR delivery
-│   │   │   ├── checkpoints.js       # Checkpoint creation and status toggles
-│   │   │   ├── flights.js           # Flight rosters and manual entry
-│   │   │   ├── health.js            # Liveness and database readiness endpoints
-│   │   │   ├── incidents.js         # Baggage claim incident management
-│   │   │   ├── notifications.js     # User alert inbox and unread counters
-│   │   │   ├── scans.js             # Barcode scan processing and recent log feed
-│   │   │   └── users.js             # User profile and notification preferences
+│   │   │   └── User.js              # User account model (hashed passwords)
+│   │   ├── routes/                  # Express Modular Route Definitions
+│   │   │   ├── index.js             # Central routes export registry
+│   │   │   ├── adminRoutes.js       # Admin routes mapping to adminController
+│   │   │   ├── airlineRoutes.js     # Airline directory routes
+│   │   │   ├── alertRoutes.js       # Anomaly alert routes
+│   │   │   ├── authRoutes.js        # Authentication & OTP routes
+│   │   │   ├── baggageRoutes.js     # Baggage tracking & operations board routes
+│   │   │   ├── checkpointRoutes.js  # Scanning station routes
+│   │   │   ├── flightRoutes.js      # Flight schedule routes
+│   │   │   ├── healthRoutes.js      # Health and readiness routes
+│   │   │   ├── incidentRoutes.js    # Incident claim routes
+│   │   │   ├── notificationRoutes.js # User inbox routes
+│   │   │   ├── scanRoutes.js        # Checkpoint barcode scan routes
+│   │   │   └── userRoutes.js        # User account & preferences routes
+│   │   ├── services/                # Reusable Business Logic Services
+│   │   │   ├── index.js             # Central services export registry
+│   │   │   ├── anomalyService.js    # Anomaly deduplication & sweep worker
+│   │   │   ├── auditService.js      # Audit trail recording service
+│   │   │   ├── baggageService.js    # State machine transition & scan orchestration
+│   │   │   ├── flightService.js     # Flight directory management
+│   │   │   ├── notificationService.js # Notification dispatcher
+│   │   │   ├── otpService.js        # Cryptographic OTP generator & validator
+│   │   │   ├── predictionService.js # Delay risk scoring and model loader
+│   │   │   ├── serializers.js       # Safe Data Transfer Object (DTO) converters
+│   │   │   ├── sweep.js             # Periodic dwell-time sweep worker
+│   │   │   └── tracking.js          # State machine transitions and scan engine
 │   │   ├── scripts/                 # Administrative CLI Tooling
 │   │   │   ├── dbCheck.js           # Live MongoDB Atlas ping, write, and read verification
 │   │   │   ├── exportTraining.js    # Data exporter for machine learning training
 │   │   │   ├── seedCheckpoints.js   # Starter checkpoint configuration generator
 │   │   │   ├── seedDirectory.js     # Airline directory and flight schedule seeder
 │   │   │   └── setRole.js           # CLI utility to elevate user account roles
-│   │   ├── services/                # Business Logic Services
-│   │   │   ├── alerts.js            # Alert generation and deduplication
-│   │   │   ├── audit.js             # Audit trail recorder
-│   │   │   ├── flights.js           # Flight schedule manager
-│   │   │   ├── notifications.js     # Notification delivery service
-│   │   │   ├── otp.js               # Cryptographic OTP generator and validator
-│   │   │   ├── prediction.js        # Delay risk scoring and model loader
-│   │   │   ├── serializers.js       # Safe Data Transfer Object (DTO) converters
-│   │   │   ├── sweep.js             # Background dwell-time sweep worker
-│   │   │   └── tracking.js          # Checkpoint scan and state transition processor
-│   │   ├── utils/                   # Helpers & Logging
+│   │   ├── utils/                   # Shared Server Utilities & Logging
 │   │   │   ├── crypto.js            # Random bytes and entropy generators
 │   │   │   ├── errors.js            # AppError classes and HTTP status codes
 │   │   │   └── logger.js            # Pino structured logger
@@ -321,18 +344,18 @@ Use this table to immediately identify which files power any feature when demons
 
 | Module | Frontend View / Component | Backend Route & Controller | Database Model | Key Functions |
 |---|---|---|---|---|
-| **Authentication & RBAC** | `frontend/js/pages/auth.js`<br>`frontend/js/components/otp.js` | `backend/src/routes/auth.js`<br>`backend/src/middleware/auth.js` | `User.js`<br>`Session.js`<br>`OtpChallenge.js` | `startSession`, `verifyOtp`, `requireRole`, `issueOtp` |
-| **Baggage Registration** | `frontend/js/pages/passenger.js`<br>`frontend/js/components/baggage.js` | `backend/src/routes/baggage.js` | `Baggage.js`<br>`Flight.js` | `generateReference`, `Baggage.create`, `toBaggageDTO` |
-| **QR Code Generation** | `frontend/js/components/baggage.js`<br>`frontend/libraries/qrcode.js` | `backend/src/routes/baggage.js` | `Baggage.js` | `secureRandomInt`, `generateQrPayload`, `QRCode.toString` |
-| **Baggage Tracking & Lookup** | `frontend/js/pages/passenger.js`<br>`frontend/js/components/lookup.js` | `backend/src/routes/baggage.js` | `Baggage.js`<br>`BaggageEvent.js` | `loadAccessibleBag`, `normalizeReference`, `parseLookupInput` |
-| **Checkpoint Scanning** | `frontend/js/pages/staff.js`<br>`frontend/libraries/html5-qrcode.min.js` | `backend/src/routes/scans.js`<br>`backend/src/services/tracking.js` | `Checkpoint.js`<br>`BaggageEvent.js` | `processScan`, `applyStatus`, `checkTransition` |
-| **Operations Board** | `frontend/js/pages/board.js` | `backend/src/routes/baggage.js` (`/board`) | `Baggage.js` | `changeStatus`, `allowedNextStatuses`, `checkTransition` |
-| **Anomaly Detection** | `frontend/js/pages/staff.js` (`alertsPage`) | `backend/src/routes/alerts.js`<br>`backend/src/services/sweep.js` | `AnomalyAlert.js` | `evaluateScan`, `evaluateDwell`, `runAnomalySweep`, `raiseAlert` |
-| **Delay-Risk Estimation** | `frontend/js/components/baggage.js` | `backend/src/services/prediction.js`<br>`shared-utils/src/prediction.js` | `PredictionRecord.js` | `buildFeatures`, `baselineRisk`, `logisticRisk`, `estimateDelay` |
-| **Station Checkpoints** | `frontend/js/pages/admin.js` (`systemPage`) | `backend/src/routes/checkpoints.js` | `Checkpoint.js` | `Checkpoint.create`, `Checkpoint.find`, `patchCheckpoint` |
-| **User Administration** | `frontend/js/pages/admin.js` (`usersPage`) | `backend/src/routes/admin.js` | `User.js`<br>`Session.js` | `User.find`, `User.save`, `Session.deleteMany` |
-| **Incident Reporting** | `frontend/js/pages/general.js` | `backend/src/routes/incidents.js` | `Incident.js` | `Incident.create`, `Incident.find`, `notify` |
-| **System Audit Trail** | `frontend/js/pages/admin.js` (`auditPage`) | `backend/src/routes/admin.js` (`/audit`) | `AuditEvent.js` | `audit`, `AuditEvent.find`, `AuditEvent.countDocuments` |
+| **Authentication & RBAC** | `frontend/js/pages/auth.js`<br>`frontend/js/components/otp.js` | `backend/src/routes/authRoutes.js`<br>`backend/src/controllers/authController.js`<br>`backend/src/middleware/authMiddleware.js` | `User.js`<br>`Session.js`<br>`OtpChallenge.js` | `register`, `verifyOtp`, `login`, `logout`, `requireRole`, `issueOtp` |
+| **Baggage Registration** | `frontend/js/pages/passenger.js`<br>`frontend/js/components/baggage.js` | `backend/src/routes/baggageRoutes.js`<br>`backend/src/controllers/baggageController.js`<br>`backend/src/services/baggageService.js` | `Baggage.js`<br>`Flight.js` | `generateReference`, `createBaggage`, `toBaggageDTO` |
+| **QR Code Generation** | `frontend/js/components/baggage.js`<br>`frontend/libraries/qrcode.js` | `backend/src/routes/baggageRoutes.js`<br>`backend/src/controllers/baggageController.js` | `Baggage.js` | `secureRandomInt`, `generateQrPayload`, `getBaggageQr` |
+| **Baggage Tracking & Lookup** | `frontend/js/pages/passenger.js`<br>`frontend/js/components/lookup.js` | `backend/src/routes/baggageRoutes.js`<br>`backend/src/controllers/baggageController.js` | `Baggage.js`<br>`BaggageEvent.js` | `getBaggageByRef`, `normalizeReference`, `parseLookupInput` |
+| **Checkpoint Scanning** | `frontend/js/pages/staff.js`<br>`frontend/libraries/html5-qrcode.min.js` | `backend/src/routes/scanRoutes.js`<br>`backend/src/controllers/scanController.js`<br>`backend/src/services/tracking.js` | `Checkpoint.js`<br>`BaggageEvent.js` | `processScan`, `applyStatus`, `checkTransition` |
+| **Operations Board** | `frontend/js/pages/board.js` | `backend/src/routes/baggageRoutes.js`<br>`backend/src/controllers/baggageController.js` | `Baggage.js` | `getOperationsBoard`, `updateBaggageStatus`, `allowedNextStatuses` |
+| **Anomaly Detection** | `frontend/js/pages/staff.js` (`alertsPage`) | `backend/src/routes/alertRoutes.js`<br>`backend/src/controllers/alertController.js`<br>`backend/src/services/anomalyService.js` | `AnomalyAlert.js` | `evaluateScan`, `evaluateDwell`, `runAnomalySweep`, `raiseAlert` |
+| **Delay-Risk Estimation** | `frontend/js/components/baggage.js` | `backend/src/controllers/baggageController.js`<br>`backend/src/services/predictionService.js`<br>`shared-utils/src/prediction.js` | `PredictionRecord.js` | `getBaggagePrediction`, `buildFeatures`, `baselineRisk`, `logisticRisk` |
+| **Station Checkpoints** | `frontend/js/pages/admin.js` (`systemPage`) | `backend/src/routes/checkpointRoutes.js`<br>`backend/src/controllers/checkpointController.js` | `Checkpoint.js` | `listCheckpoints`, `createCheckpoint`, `patchCheckpoint` |
+| **User Administration** | `frontend/js/pages/admin.js` (`usersPage`) | `backend/src/routes/adminRoutes.js`<br>`backend/src/controllers/adminController.js` | `User.js`<br>`Session.js` | `listUsers`, `updateUserRole`, `Session.deleteMany` |
+| **Incident Reporting** | `frontend/js/pages/general.js` | `backend/src/routes/incidentRoutes.js`<br>`backend/src/controllers/incidentController.js` | `Incident.js` | `createIncident`, `listIncidents`, `notify` |
+| **System Audit Trail** | `frontend/js/pages/admin.js` (`auditPage`) | `backend/src/routes/adminRoutes.js`<br>`backend/src/controllers/adminController.js`<br>`backend/src/services/auditService.js` | `AuditEvent.js` | `recordAuditEvent`, `getAuditEvents`, `getSystemKpis` |
 
 ---
 
@@ -340,15 +363,15 @@ Use this table to immediately identify which files power any feature when demons
 
 | Faculty Question | File to Open | Exact Explanation to Give |
 |---|---|---|
-| **"Where is user authentication implemented?"** | `backend/src/routes/auth.js`<br>`backend/src/middleware/auth.js` | Registration hashes passwords with `bcryptjs` (salt rounds 12). Login creates an authenticated `Session` in MongoDB and sets an `HttpOnly`, `SameSite` session cookie. Roles are enforced via `requireRole('staff', 'admin')`. |
+| **"Where is user authentication implemented?"** | `backend/src/routes/authRoutes.js`<br>`backend/src/controllers/authController.js`<br>`backend/src/middleware/authMiddleware.js` | Registration hashes passwords with `bcryptjs` (salt rounds 12). Login creates an authenticated `Session` in MongoDB and sets an `HttpOnly`, `SameSite` session cookie. Roles are enforced via `requireRole('staff', 'admin')`. |
 | **"Where is the database connected?"** | `backend/src/config/db.js` | Mongoose connects via `connectDatabase(uri, dbName)`. It enables strict query filters to prevent NoSQL injection, checks `readyState` to avoid reconnection thrashing, and redacts passwords from all log outputs. |
 | **"How does the QR generation algorithm work?"** | `shared-utils/src/qr.js` | Implements `secureRandomInt` using **cryptographic rejection sampling**. It draws 32-bit unsigned integers from `crypto.getRandomValues`, rejecting values above the largest multiple of range $S$ ($2^{32} - (2^{32} \pmod S)$) to eliminate modulo bias. |
-| **"Where is baggage registered and stored?"** | `backend/src/routes/baggage.js` | `r.post('/')` checks flight eligibility, verifies user limits (max 10 bags), invokes `generateReference` with retry logic for uniqueness, stores the `Baggage` document, and logs a creation audit event. |
-| **"Where are state machine transitions enforced?"** | `shared-utils/src/status.js` | `checkTransition(current, next, lastMain)` evaluates candidate moves. Forward skips report skipped intermediate stages (`skipped: [...]`), backward transitions return `{ ok: false, reason: 'BACKWARD' }`, and terminal states prevent further moves. |
-| **"How does anomaly detection operate?"** | `shared-utils/src/anomaly.js`<br>`backend/src/services/tracking.js` | `evaluateScan()` checks for duplicate scans within 120 seconds, invalid sequence regressions, missing security checkpoints, and airport-to-flight mismatches, raising persistent `AnomalyAlert` documents with evidence. |
-| **"How does delay-risk prediction calculate scores?"** | `shared-utils/src/prediction.js` | `buildFeatures()` creates a 9-feature operational vector (dwell ratio, skipped scans, departure proximity). `baselineRisk()` computes a bounded, transparent weighted score. If `delay_model.json` is loaded, `logisticRisk()` computes logistic log-odds. |
+| **"Where is baggage registered and stored?"** | `backend/src/routes/baggageRoutes.js`<br>`backend/src/controllers/baggageController.js`<br>`backend/src/services/baggageService.js` | Handled by `baggageController.createBaggage`. Checks flight eligibility, verifies user limits (max 10 bags), invokes `generateReference` with retry logic for uniqueness, stores the `Baggage` document, and logs a creation audit event. |
+| **"Where are state machine transitions enforced?"** | `shared-utils/src/status.js`<br>`backend/src/services/baggageService.js` | `checkTransition(current, next, lastMain)` evaluates candidate moves. Forward skips report skipped intermediate stages (`skipped: [...]`), backward transitions return `{ ok: false, reason: 'BACKWARD' }`, and terminal states prevent further moves. |
+| **"How does anomaly detection operate?"** | `shared-utils/src/anomaly.js`<br>`backend/src/services/anomalyService.js`<br>`backend/src/services/tracking.js` | `evaluateScan()` checks for duplicate scans within 120 seconds, invalid sequence regressions, missing security checkpoints, and airport-to-flight mismatches, raising persistent `AnomalyAlert` documents with evidence. |
+| **"How does delay-risk prediction calculate scores?"** | `shared-utils/src/prediction.js`<br>`backend/src/services/predictionService.js` | `buildFeatures()` creates a 9-feature operational vector (dwell ratio, skipped scans, departure proximity). `baselineRisk()` computes a bounded, transparent weighted score. If `delay_model.json` is loaded, `logisticRisk()` computes logistic log-odds. |
 | **"How are NoSQL injection attacks prevented?"** | `backend/src/validators/common.js` | Every request parameter, query, and payload is validated against strict **Zod schemas** before reaching any MongoDB query. Unexpected query operators (such as `$gt` or `$ne`) are stripped and rejected at the gateway. |
-| **"How is CSRF prevented with cookie sessions?"** | `backend/src/middleware/security.js` | `requireCsrfHeader` rejects any state-changing HTTP request (`POST`, `PATCH`, `DELETE`) unless it carries the custom header `X-Requested-With: aerotrack`. Browsers cannot attach this header cross-origin without an explicit CORS preflight. |
+| **"How is CSRF prevented with cookie sessions?"** | `backend/src/middleware/securityMiddleware.js` | `requireCsrfHeader` rejects any state-changing HTTP request (`POST`, `PATCH`, `DELETE`) unless it carries the custom header `X-Requested-With: aerotrack`. Browsers cannot attach this header cross-origin without an explicit CORS preflight. |
 | **"Why is the client served without a build step?"** | `backend/src/app.js`<br>`frontend/js/main.js` | The client is built with modern ES Modules natively supported by all modern browsers. Express serves the static assets with `Cache-Control: no-cache` on code files, simplifying maintenance and development for students. |
 
 ---

@@ -445,13 +445,16 @@
   </ul>
 
   <h1>Chapter 9: Backend Architecture & Structure</h1>
-  <p>The backend lives in <code>backend/</code> and runs on Express 5:</p>
+  <p>The backend lives in <code>backend/</code> and follows an enterprise 3-tier Layered MVC (Model-View-Controller & Service) design pattern on Express 5:</p>
   <ul>
+    <li><code>backend/server.js</code> & <code>backend/seed.js</code>: Root forwarders for standard npm scripts and CLI commands.</li>
     <li><code>src/index.js</code>: The runtime entry point. Calls <code>bootstrap()</code>, seeds directory flights, attaches HTTP listener, and starts background sweeper.</li>
-    <li><code>src/app.js</code>: Instantiates the Express application, configures Helmet CSP, CORS, JSON limit (50kb), cookie parsing, rate limiters, routes, and SPA static file fallback.</li>
-    <li><code>src/bootstrap.js</code>: Service container setup. Connects Mongoose to MongoDB Atlas, instantiates email sender, and loads optional ML model.</li>
-    <li><code>src/config/db.js</code>: Mongoose connection manager. Validates connection state (<code>readyState === 1</code>), enforces strict queries, and redacts passwords.</li>
-    <li><code>src/config/env.js</code>: Zod validation schema for environment variables with safe error reporting.</li>
+    <li><code>src/app.js</code>: Instantiates Express, configures Helmet CSP, CORS, cookie parsing, rate limiters, mounts modular route registries, and SPA static file fallback.</li>
+    <li><code>src/controllers/</code>: Decoupled HTTP request handlers (12 controllers: <code>authController</code>, <code>baggageController</code>, <code>checkpointController</code>, <code>scanController</code>, <code>alertController</code>, <code>adminController</code>, <code>flightController</code>, <code>incidentController</code>, <code>userController</code>, <code>airlineController</code>, <code>notificationController</code>, <code>healthController</code>).</li>
+    <li><code>src/routes/</code>: Modular HTTP route definitions (<code>*Routes.js</code>) binding URLs, security middleware (RBAC, CSRF), and delegating to controllers.</li>
+    <li><code>src/services/</code>: Reusable, framework-agnostic domain logic (<code>baggageService</code>, <code>anomalyService</code>, <code>predictionService</code>, <code>otpService</code>, <code>flightService</code>, <code>auditService</code>, <code>notificationService</code>, <code>tracking</code>, <code>sweep</code>, <code>serializers</code>).</li>
+    <li><code>src/middleware/</code>: Express middleware pipeline (<code>authMiddleware</code>, <code>securityMiddleware</code>, <code>errorMiddleware</code>).</li>
+    <li><code>src/config/db.js</code> & <code>env.js</code>: Mongoose Atlas connection manager and Zod environment schema validation.</li>
   </ul>
 
   <h1>Chapter 10: Complete API Routes Guide</h1>
@@ -617,15 +620,24 @@
   <table>
     <thead><tr><th>File Path</th><th>Module</th><th>Key Purpose & Functions</th></tr></thead>
     <tbody>
+      <tr><td><code>backend/src/controllers/authController.js</code></td><td>Auth Controller</td><td><code>register</code>, <code>verifyOtp</code>, <code>login</code>, <code>logout</code></td></tr>
+      <tr><td><code>backend/src/controllers/baggageController.js</code></td><td>Baggage Controller</td><td><code>createBaggage</code>, <code>getBaggageByRef</code>, <code>updateBaggageStatus</code></td></tr>
+      <tr><td><code>backend/src/controllers/checkpointController.js</code></td><td>Checkpoint Controller</td><td><code>listCheckpoints</code>, <code>createCheckpoint</code>, <code>patchCheckpoint</code></td></tr>
+      <tr><td><code>backend/src/controllers/scanController.js</code></td><td>Scan Controller</td><td><code>processScan</code>, <code>getRecentScans</code></td></tr>
+      <tr><td><code>backend/src/controllers/alertController.js</code></td><td>Alert Controller</td><td><code>listAlerts</code>, <code>patchAlert</code>, <code>triggerSweep</code></td></tr>
+      <tr><td><code>backend/src/controllers/adminController.js</code></td><td>Admin Controller</td><td><code>getAnalytics</code>, <code>listUsers</code>, <code>updateUserRole</code></td></tr>
+      <tr><td><code>backend/src/routes/authRoutes.js</code></td><td>Auth Routes</td><td>Modular authentication route declarations</td></tr>
+      <tr><td><code>backend/src/routes/baggageRoutes.js</code></td><td>Baggage Routes</td><td>Modular luggage tracking and board route declarations</td></tr>
+      <tr><td><code>backend/src/routes/scanRoutes.js</code></td><td>Scan Routes</td><td>Modular barcode scan route declarations</td></tr>
+      <tr><td><code>backend/src/services/baggageService.js</code></td><td>Baggage Service</td><td>State transitions, CSPRNG collision retry, optimistic locking</td></tr>
+      <tr><td><code>backend/src/services/anomalyService.js</code></td><td>Anomaly Service</td><td>Dwell sweeps, alert deduplication, alert dispatch</td></tr>
+      <tr><td><code>backend/src/services/predictionService.js</code></td><td>Prediction Service</td><td>Delay-risk scoring and machine-learning model loader</td></tr>
       <tr><td><code>shared-utils/src/qr.js</code></td><td>QR Engine</td><td><code>secureRandomInt</code>, <code>generateReference</code>, <code>toQrPayload</code></td></tr>
       <tr><td><code>shared-utils/src/status.js</code></td><td>Journey Rules</td><td><code>checkTransition</code>, <code>allowedNextStatuses</code>, <code>nextMainStep</code></td></tr>
       <tr><td><code>shared-utils/src/anomaly.js</code></td><td>Anomaly Engine</td><td><code>evaluateScan</code>, <code>evaluateDwell</code>, <code>evaluateScanFailures</code></td></tr>
       <tr><td><code>shared-utils/src/prediction.js</code></td><td>Delay Risk</td><td><code>buildFeatures</code>, <code>baselineRisk</code>, <code>logisticRisk</code></td></tr>
       <tr><td><code>backend/src/app.js</code></td><td>Core Server</td><td>Express 5 configuration, security middleware, static file serving</td></tr>
       <tr><td><code>backend/src/config/db.js</code></td><td>Database</td><td><code>connectDatabase</code>, <code>pingDatabase</code>, readyState caching</td></tr>
-      <tr><td><code>backend/src/routes/auth.js</code></td><td>Authentication</td><td>Login, registration, OTP validation, password reset</td></tr>
-      <tr><td><code>backend/src/routes/baggage.js</code></td><td>Baggage</td><td>CRUD, QR generation, delay prediction, operations board</td></tr>
-      <tr><td><code>backend/src/routes/scans.js</code></td><td>Checkpoints</td><td>Optical scan processing with idempotency check</td></tr>
       <tr><td><code>frontend/js/main.js</code></td><td>Client Core</td><td>Client routing, layout mounting, auth state listener</td></tr>
       <tr><td><code>frontend/js/lib/api.js</code></td><td>Client Network</td><td>Fetch client with automatic anti-CSRF header injection</td></tr>
     </tbody>
@@ -818,19 +830,21 @@ npm test</pre>
   <table>
     <thead><tr><th>Viva Question Topic</th><th>File to Open</th><th>Key Function / Line</th></tr></thead>
     <tbody>
-      <tr><td>User Login & Session Creation</td><td><code>backend/src/routes/auth.js</code></td><td><code>r.post('/login')</code>, <code>startSession()</code></td></tr>
-      <tr><td>Password Hashing & Salt Rounds</td><td><code>backend/src/routes/auth.js</code></td><td><code>bcrypt.hash(body.password, 12)</code></td></tr>
+      <tr><td>User Login & Authentication Controller</td><td><code>backend/src/controllers/authController.js</code></td><td><code>login()</code>, <code>verifyOtp()</code>, <code>register()</code></td></tr>
+      <tr><td>Modular Auth Routes & CSRF</td><td><code>backend/src/routes/authRoutes.js</code></td><td><code>r.post('/login')</code>, <code>requireCsrfHeader</code></td></tr>
+      <tr><td>Password Hashing & Timing Defense</td><td><code>backend/src/controllers/authController.js</code></td><td><code>bcrypt.compare()</code>, <code>DUMMY_HASH</code></td></tr>
       <tr><td>Database Connection & Ping Check</td><td><code>backend/src/config/db.js</code></td><td><code>connectDatabase()</code>, <code>pingDatabase()</code></td></tr>
       <tr><td>CSPRNG Rejection Sampling Algorithm</td><td><code>shared-utils/src/qr.js</code></td><td><code>secureRandomInt()</code>, <code>generateReference()</code></td></tr>
       <tr><td>Journey State Machine & Transitions</td><td><code>shared-utils/src/status.js</code></td><td><code>checkTransition()</code>, <code>MAIN_FLOW</code></td></tr>
-      <tr><td>Optical Barcode Scan Endpoint</td><td><code>backend/src/routes/scans.js</code></td><td><code>r.post('/')</code>, <code>processScan()</code></td></tr>
-      <tr><td>Anomaly Evaluation Logic</td><td><code>shared-utils/src/anomaly.js</code></td><td><code>evaluateScan()</code></td></tr>
-      <tr><td>Delay-Risk Prediction Scoring</td><td><code>shared-utils/src/prediction.js</code></td><td><code>baselineRisk()</code>, <code>buildFeatures()</code></td></tr>
-      <tr><td>Anti-CSRF Header Protection</td><td><code>backend/src/middleware/security.js</code></td><td><code>requireCsrfHeader()</code></td></tr>
-      <tr><td>Role-Based Access Control (RBAC)</td><td><code>backend/src/middleware/auth.js</code></td><td><code>requireRole()</code>, <code>requireAuth()</code></td></tr>
-      <tr><td>Baggage Registration CRUD</td><td><code>backend/src/routes/baggage.js</code></td><td><code>r.post('/')</code>, <code>Baggage.create()</code></td></tr>
-      <tr><td>Operations Board Active Feed</td><td><code>backend/src/routes/baggage.js</code></td><td><code>r.get('/board')</code></td></tr>
-      <tr><td>System Analytics & KPIs</td><td><code>backend/src/routes/admin.js</code></td><td><code>r.get('/analytics')</code></td></tr>
+      <tr><td>Baggage Controller & Registration</td><td><code>backend/src/controllers/baggageController.js</code></td><td><code>createBaggage()</code>, <code>getBaggageByRef()</code></td></tr>
+      <tr><td>Baggage Service Business Logic</td><td><code>backend/src/services/baggageService.js</code></td><td>CSPRNG collision retry, optimistic locking</td></tr>
+      <tr><td>Optical Barcode Scan Controller</td><td><code>backend/src/controllers/scanController.js</code></td><td><code>processScan()</code>, idempotency check</td></tr>
+      <tr><td>Anomaly Evaluation Logic & Sweeper</td><td><code>shared-utils/src/anomaly.js</code><br><code>backend/src/services/anomalyService.js</code></td><td><code>evaluateScan()</code>, <code>runSweep()</code></td></tr>
+      <tr><td>Delay-Risk Prediction Scoring</td><td><code>shared-utils/src/prediction.js</code><br><code>backend/src/services/predictionService.js</code></td><td><code>baselineRisk()</code>, <code>buildFeatures()</code></td></tr>
+      <tr><td>Anti-CSRF Header Protection</td><td><code>backend/src/middleware/securityMiddleware.js</code></td><td><code>requireCsrfHeader()</code></td></tr>
+      <tr><td>Role-Based Access Control (RBAC)</td><td><code>backend/src/middleware/authMiddleware.js</code></td><td><code>requireRole()</code>, <code>requireAuth()</code></td></tr>
+      <tr><td>Operations Board Active Feed</td><td><code>backend/src/controllers/baggageController.js</code></td><td><code>getOperationsBoard()</code></td></tr>
+      <tr><td>System Analytics & KPIs</td><td><code>backend/src/controllers/adminController.js</code></td><td><code>getAnalytics()</code>, <code>getAuditLogs()</code></td></tr>
       <tr><td>Frontend HTTP Client</td><td><code>frontend/js/lib/api.js</code></td><td><code>request()</code>, <code>post()</code>, <code>patch()</code></td></tr>
       <tr><td>Client Routing & Page Switcher</td><td><code>frontend/js/main.js</code></td><td><code>ROUTES</code> array, <code>render()</code></td></tr>
     </tbody>

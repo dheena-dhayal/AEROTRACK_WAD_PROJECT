@@ -29,6 +29,7 @@ const STAFF = ['staff', 'admin'];
 
 /** layout: public | app | bare. roles: who may open it (implies sign-in). */
 const ROUTES = [
+  /* --- Public Informational Views --- */
   { path: '/', layout: 'public', load: page(() => import('./pages/landing.js'), 'landingPage') },
   { path: '/about', layout: 'public', load: page(about, 'aboutPage') },
   { path: '/privacy', layout: 'public', load: page(about, 'privacyPage') },
@@ -37,6 +38,7 @@ const ROUTES = [
   { path: '/tutorial', layout: 'public', load: page(general, 'tutorialPage') },
   { path: '/forbidden', layout: 'public', load: page(general, 'forbiddenPage') },
 
+  /* --- Authentication & Account Views --- */
   { path: '/login', layout: 'bare', load: page(authPages, 'loginPage') },
   { path: '/register', layout: 'bare', load: page(authPages, 'registerPage') },
   { path: '/verify-email', layout: 'bare', load: page(authPages, 'verifyEmailPage') },
@@ -44,11 +46,14 @@ const ROUTES = [
   { path: '/reset-password', layout: 'bare', redirect: '/forgot-password' },
   { path: '/app', layout: 'bare', redirect: () => (auth.user ? homeFor(auth.user.role) : '/login') },
 
+  /* --- Passenger Portal Views --- */
   { path: '/dashboard', layout: 'app', roles: ['passenger'], load: page(passenger, 'passengerDashboard') },
   { path: '/baggage/new', layout: 'app', roles: ALL, load: page(passenger, 'registerBaggagePage') },
   { path: '/baggage/:ref', layout: 'app', roles: ALL, load: page(passenger, 'baggageDetailPage') },
   { path: '/track', layout: 'app', roles: ALL, load: page(passenger, 'trackPage') },
   { path: '/track/:ref', layout: 'app', roles: ALL, load: page(passenger, 'baggageDetailPage') },
+
+  /* --- General Airline & Incident Views --- */
   { path: '/flights', layout: 'app', roles: ALL, load: page(general, 'flightsPage') },
   { path: '/flights/:id', layout: 'app', roles: ALL, load: page(general, 'flightDetailPage') },
   { path: '/incidents', layout: 'app', roles: ALL, load: page(general, 'incidentsPage') },
@@ -56,10 +61,14 @@ const ROUTES = [
   { path: '/incidents/:id', layout: 'app', roles: ALL, load: page(general, 'incidentDetailPage') },
   { path: '/notifications', layout: 'app', roles: ALL, load: page(general, 'notificationsPage') },
   { path: '/settings', layout: 'app', roles: ALL, load: page(general, 'settingsPage') },
+
+  /* --- Ground Staff Operations Views --- */
   { path: '/staff', layout: 'app', roles: STAFF, load: page(staff, 'staffDashboard') },
   { path: '/staff/baggage', layout: 'app', roles: STAFF, load: page(staff, 'baggageSearchPage') },
   { path: '/staff/alerts', layout: 'app', roles: STAFF, load: page(staff, 'alertsPage') },
   { path: '/staff/board', layout: 'app', roles: STAFF, load: page(() => import('./pages/board.js'), 'baggageBoardPage') },
+
+  /* --- Administrative Governance Views --- */
   { path: '/admin', layout: 'app', roles: STAFF, load: page(admin, 'analyticsPage') },
   { path: '/admin/users', layout: 'app', roles: ['admin'], load: page(admin, 'usersPage') },
   { path: '/admin/audit', layout: 'app', roles: ['admin'], load: page(admin, 'auditPage') },
