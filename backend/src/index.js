@@ -30,6 +30,12 @@ async function main() {
   const app = ctx.env.SERVE_CLIENT ? createApp(ctx, { clientDir: path.resolve(here, '../../frontend'), sharedDir: path.resolve(here, '../../shared-utils/src') }) : createApp(ctx);
   const server = app.listen(ctx.env.PORT, () => {
     logger.info({ port: ctx.env.PORT, env: ctx.env.NODE_ENV, emailMode: ctx.email.mode, flights: 'sample directory (no external API)' }, `AeroTrack Pro listening on http://localhost:${ctx.env.PORT}`);
+    console.log('\n' + '='.repeat(64));
+    console.log('  ✈️   AEROTRACK PRO IS RUNNING SUCCESSFULLY!');
+    console.log(`  🌐  Local Web App URL:  http://localhost:${ctx.env.PORT}`);
+    console.log('  👉  Ctrl + Click the link above to open in your browser');
+    console.log('  🛑  Keep this terminal open while using the application');
+    console.log('='.repeat(64) + '\n');
   });
 
   let timer;

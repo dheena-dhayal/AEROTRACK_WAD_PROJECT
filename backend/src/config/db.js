@@ -20,7 +20,7 @@ export async function connectDatabase(uri, dbName) {
   if (mongoose.connection.readyState === 1) return;
   const safe = redactMongoUri(uri);
   try {
-    await mongoose.connect(uri, { dbName, serverSelectionTimeoutMS: 10_000, autoIndex: true });
+    await mongoose.connect(uri, { dbName, serverSelectionTimeoutMS: 30_000, autoIndex: true });
     logger.info({ host: safe, dbName }, 'MongoDB connected');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
