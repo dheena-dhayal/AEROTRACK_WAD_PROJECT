@@ -18,6 +18,7 @@
     "seed": "npm run seed -w backend",
     "seed:checkpoints": "npm run seed:checkpoints -w backend --",
     "set-role": "npm run set-role -w backend --",
+    "create-user": "npm run create-user -w backend --",
     "db:check": "npm run db:check -w backend"
   },
   "engines": {
