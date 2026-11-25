@@ -83,9 +83,18 @@ function cooldown(btn, seconds, ctx, label = 'Resend code', prefix = 'Resend in'
 const safeNext = (next) => (next && next.startsWith('/') && !next.startsWith('//') ? next : null);
 const showError = (slot, markup) => (slot.innerHTML = String(markup ?? ''));
 
+function resolveTarget(next, role) {
+  if (!next) return homeFor(role);
+  if (next === '/dashboard' && role !== 'passenger') return homeFor(role);
+  if ((next === '/staff' || next.startsWith('/staff/')) && role === 'passenger') return homeFor(role);
+  if ((next === '/admin' || next.startsWith('/admin/')) && role === 'passenger') return homeFor(role);
+  if (next.startsWith('/admin/') && role !== 'admin') return homeFor(role);
+  return next;
+}
+
 export function loginPage(ctx) {
   const next = safeNext(ctx.query.get('next'));
-  if (auth.user) return ctx.navigate(next ?? homeFor(auth.user.role), { replace: true });
+  if (auth.user) return ctx.navigate(resolveTarget(next, auth.user.role), { replace: true });
   ctx.el.innerHTML = String(
     authShell({
       title: 'Welcome back',
@@ -110,7 +119,7 @@ export function loginPage(ctx) {
     try {
       const res = await withBusy(form.querySelector('[type=submit]'), post('/auth/login', body));
       auth.setUser(res.user);
-      ctx.navigate(next ?? homeFor(res.user.role), { replace: true });
+      ctx.navigate(resolveTarget(next, res.user.role), { replace: true });
     } catch (err) {
       const unverified = err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED';
       showError(
