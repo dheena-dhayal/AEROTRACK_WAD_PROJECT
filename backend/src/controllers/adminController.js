@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import { BAGGAGE_STATUSES, ROLES } from '@aerotrack/shared';
 import { AnomalyAlert, AuditEvent, Baggage, BaggageEvent, Incident, Session, User } from '../models/index.js';
+import { clearSessionCache } from '../middleware/auth.js';
 import { demoScope, escapeRegex, objectId, pagination, parse } from '../validators/common.js';
 import { toPublicUser } from '../services/serializers.js';
 import { badRequest, notFound } from '../utils/errors.js';
@@ -133,7 +134,10 @@ export function createAdminController(ctx) {
       if (body.role) user.role = body.role;
       if (body.disabled !== undefined) user.disabled = body.disabled;
       await user.save();
-      if (body.disabled || body.role) await Session.deleteMany({ user: user._id });
+      if (body.disabled || body.role) {
+        await Session.deleteMany({ user: user._id });
+        clearSessionCache();
+      }
       await audit(req.user, 'admin.user_updated', { type: 'user', id }, body);
       res.json({ user: { ...toPublicUser(user), disabled: user.disabled } });
     },
