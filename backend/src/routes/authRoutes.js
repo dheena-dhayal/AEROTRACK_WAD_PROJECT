@@ -16,7 +16,8 @@ export function authRoutes(ctx, limiters) {
   r.post('/verify-otp', limiters.auth, ctrl.verifyOtpHandler);
   r.post('/resend-otp', limiters.email, ctrl.resendOtp);
 
-  // Authentication session login & logout
+  // Authentication session login, logout & status
+  r.get('/me', ctrl.me);
   r.post('/login', limiters.auth, ctrl.login);
   r.post('/logout', requireAuth, ctrl.logout);
 

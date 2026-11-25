@@ -40,7 +40,7 @@ export async function airlinesPage(ctx) {
             <span class="sr-only">Region</span>
             <select name="region">
               <option value="">All regions</option>
-              ${AIRLINE_REGIONS.map((r) => html`<option>${r}</option>`)}
+              ${AIRLINE_REGIONS.map((r) => html`<option value="${r}">${r}</option>`)}
             </select>
           </label>
           <button type="reset" class="filter-reset" disabled>${icon('rotateCcw')} Reset</button>
@@ -76,11 +76,13 @@ export async function airlinesPage(ctx) {
     );
   };
 
-  form.addEventListener('input', () => {
+  const onFilter = () => {
     state.search = form.search.value;
     state.region = form.region.value;
     draw();
-  });
+  };
+  form.addEventListener('input', onFilter);
+  form.addEventListener('change', onFilter);
   form.addEventListener('submit', (e) => e.preventDefault());
   form.addEventListener('reset', () => {
     state.search = '';

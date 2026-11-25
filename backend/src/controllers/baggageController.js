@@ -42,7 +42,7 @@ export function createBaggageController(ctx) {
       const q = parse(
         pagination.extend({
           search: z.string().trim().max(60).optional(),
-          status: z.enum(BAGGAGE_STATUSES).optional(),
+          status: z.string().trim().optional(),
           flight: objectId.optional(),
           scope: demoScope,
         }),
@@ -52,7 +52,11 @@ export function createBaggageController(ctx) {
       const staff = isStaff(req.user);
       if (!staff) filter.owner = req.user._id;
       else if (q.scope !== 'all') filter.isDemo = q.scope === 'demo';
-      if (q.status) filter.status = q.status;
+      if (q.status) {
+        const statuses = q.status.split(',').map((s) => s.trim()).filter((s) => BAGGAGE_STATUSES.includes(s));
+        if (statuses.length === 1) filter.status = statuses[0];
+        else if (statuses.length > 1) filter.status = { $in: statuses };
+      }
       if (q.flight) filter.flight = q.flight;
       if (q.search) {
         const rx = new RegExp(escapeRegex(q.search), 'i');
@@ -65,7 +69,8 @@ export function createBaggageController(ctx) {
           .limit(q.pageSize)
           .populate('flight')
           .populate('lastCheckpoint')
-          .populate('owner', 'name'),
+          .populate('owner', 'name')
+          .lean(),
         Baggage.countDocuments(filter),
       ]);
       res.json({ items: items.map((b) => toBaggageDTO(b, { includeOwner: staff })), page: q.page, pageSize: q.pageSize, total });
@@ -75,7 +80,7 @@ export function createBaggageController(ctx) {
       const q = parse(z.object({ scope: demoScope }), req.query);
       const filter = { $or: [{ status: { $ne: 'COLLECTED' } }, { updatedAt: { $gte: new Date(ctx.now().getTime() - 24 * 3600_000) } }] };
       if (q.scope !== 'all') filter.isDemo = q.scope === 'demo';
-      const items = await Baggage.find(filter).sort({ updatedAt: -1 }).limit(300).populate('flight').populate('lastCheckpoint').populate('owner', 'name');
+      const items = await Baggage.find(filter).sort({ updatedAt: -1 }).limit(300).populate('flight').populate('lastCheckpoint').populate('owner', 'name').lean();
       res.json({ items: items.map((b) => toBaggageDTO(b, { includeOwner: true })) });
     },
 

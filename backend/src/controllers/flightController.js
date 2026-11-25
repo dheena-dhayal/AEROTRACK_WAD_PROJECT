@@ -35,7 +35,7 @@ export function createFlightController(ctx) {
         filter.$or = [{ flightNumber: rx }, { origin: rx }, { destination: rx }, { airlineName: rx }];
       }
       if (q.upcoming === 'true') filter.scheduledDeparture = { $gte: new Date(ctx.now().getTime() - 6 * 3600_000) };
-      const [items, total] = await Promise.all([
+      let [items, total] = await Promise.all([
         Flight.find(filter)
           .sort({ scheduledDeparture: 1 })
           .skip((q.page - 1) * q.pageSize)
@@ -43,6 +43,16 @@ export function createFlightController(ctx) {
           .lean(),
         Flight.countDocuments(filter),
       ]);
+
+      // Fallback: If upcoming filter was requested for an airline but returned 0 items,
+      // return the available demo flights for that airline so dropdowns always function
+      if (items.length === 0 && q.upcoming === 'true' && q.airline) {
+        const fallbackFilter = { airlineCode: q.airline.toUpperCase() };
+        if (q.scope !== 'all') fallbackFilter.isDemo = q.scope === 'demo';
+        items = await Flight.find(fallbackFilter).sort({ scheduledDeparture: 1 }).limit(q.pageSize).lean();
+        total = items.length;
+      }
+
       res.json({ items: items.map(toFlightDTO), page: q.page, pageSize: q.pageSize, total });
     },
 

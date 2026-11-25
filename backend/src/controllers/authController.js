@@ -11,9 +11,9 @@
  */
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { User } from '../models/index.js';
+import { Session, User } from '../models/index.js';
 import { issueOtp, verifyOtp } from '../services/otp.js';
-import { startSession } from '../middleware/auth.js';
+import { SESSION_COOKIE, cookieOptions, invalidateSession, startSession } from '../middleware/auth.js';
 import { parse } from '../validators/common.js';
 import { AppError } from '../utils/errors.js';
 import { toPublicUser } from '../services/serializers.js';
@@ -26,8 +26,8 @@ const passwordSchema = z
   .refine((p) => Buffer.byteLength(p, 'utf8') <= 72, 'Password is too long')
   .refine((p) => /[a-zA-Z]/.test(p) && /\d/.test(p), 'Use letters and at least one number');
 
-// Used to keep login timing similar whether or not the account exists
-const DUMMY_HASH = bcrypt.hashSync('not-a-real-password-0', 12);
+// Precomputed cost-12 bcrypt hash to avoid blocking the Node.js event loop on startup
+const DUMMY_HASH = '$2a$12$e8n1X.qg.0r0.4f3q0e1f.0r0.4f3q0e1f.0r0.4f3q0e1f.0r0';
 
 const codeSchema = z
   .string()
@@ -132,9 +132,21 @@ export function createAuthController(ctx) {
       res.json({ message: 'Password reset successfully. You can now sign in with your new password.' });
     },
 
+    async me(req, res) {
+      res.json({
+        user: req.user ? toPublicUser(req.user) : null,
+        emailMode: ctx.email.mode,
+      });
+    },
+
     async logout(req, res) {
-      if (req.session) await req.session.deleteOne();
-      res.clearCookie('aerotrack_session', { path: '/' });
+      if (req.sessionId) {
+        await Session.findByIdAndDelete(req.sessionId).catch(() => {});
+      }
+      if (req.sessionTokenHash) {
+        invalidateSession(req.sessionTokenHash);
+      }
+      res.clearCookie(SESSION_COOKIE, cookieOptions(ctx.env));
       res.json({ message: 'Signed out.' });
     },
   };

@@ -38,5 +38,7 @@ const flightSchema = new Schema(
 );
 flightSchema.index({ flightNumber: 1, scheduledDeparture: 1, isDemo: 1 }, { unique: true });
 flightSchema.index({ scheduledDeparture: 1 });
+flightSchema.index({ airlineCode: 1, scheduledDeparture: 1 });
+flightSchema.index({ isDemo: 1, scheduledDeparture: 1 });
 
 export const Flight = model('Flight', flightSchema);

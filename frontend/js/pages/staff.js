@@ -112,8 +112,8 @@ export async function staffDashboard(ctx) {
 
   const loadAttention = async () => {
     try {
-      const pages = await Promise.all(['DELAYED', 'MISSING', 'INCIDENT_REPORTED'].map((s) => get('/baggage', { status: s, pageSize: 10, scope: 'all' })));
-      const bags = pages.flatMap((p) => p.items);
+      const res = await get('/baggage', { status: 'DELAYED,MISSING,INCIDENT_REPORTED', pageSize: 30, scope: 'all' });
+      const bags = res.items;
       slot('attention').innerHTML = String(
         bags.length === 0
           ? html`<p class="p-5 small muted">No bags need attention.</p>`

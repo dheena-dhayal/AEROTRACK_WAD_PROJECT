@@ -27,10 +27,24 @@ const toAirline = (a, featured = null) => ({
   featuredFlight: featured,
 });
 
+let cachedShowcase = null;
+let cachedShowcaseUntil = 0;
+
+export function invalidateAirlineCache() {
+  cachedShowcase = null;
+  cachedShowcaseUntil = 0;
+}
+
 export function createAirlineController(_ctx) {
   return {
     async listAirlines(req, res) {
       const q = parse(z.object({ search: z.string().trim().max(60).optional(), region: z.enum(AIRLINE_REGIONS).optional() }), req.query);
+
+      // Fast path: In-memory cached showcase response for unfiltered browsing
+      if (!q.search && !q.region && cachedShowcase && cachedShowcaseUntil > Date.now()) {
+        return res.json(cachedShowcase);
+      }
+
       const filter = { active: { $ne: false } };
       if (q.region) filter.region = q.region;
       if (q.search) {
@@ -40,7 +54,14 @@ export function createAirlineController(_ctx) {
       const items = await Airline.find(filter).sort({ name: 1 }).lean();
       const featured = await Flight.find({ isDemo: true, flightNumber: { $in: items.map((a) => a.featuredFlightNumber).filter(Boolean) } }).lean();
       const byNumber = new Map(featured.map((f) => [f.flightNumber, toFlightDTO(f)]));
-      res.json({ items: items.map((a) => toAirline(a, byNumber.get(a.featuredFlightNumber ?? '') ?? null)), notice: NOTICE });
+      const result = { items: items.map((a) => toAirline(a, byNumber.get(a.featuredFlightNumber ?? '') ?? null)), notice: NOTICE };
+
+      if (!q.search && !q.region) {
+        cachedShowcase = result;
+        cachedShowcaseUntil = Date.now() + 5 * 60_000;
+      }
+
+      res.json(result);
     },
 
     async getAirlineByCode(req, res) {
