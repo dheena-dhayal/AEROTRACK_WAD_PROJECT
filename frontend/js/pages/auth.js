@@ -173,7 +173,7 @@ export function verifyEmailPage(ctx) {
   ctx.el.innerHTML = String(
     authShell({
       title: 'Verify your email',
-      subtitle: email ? html`Enter the 6-digit code sent to <strong class="fg">${email}</strong>. It expires in 5 minutes.` : 'Enter your email and the 6-digit code we sent you.',
+      subtitle: email ? html`Enter the 6-digit code sent to <strong class="fg">${email}</strong>. It expires in 5 minutes. Already verified? <a href="/login" class="link underline">Sign in</a>` : html`Enter your email and the 6-digit code we sent you. Already verified? <a href="/login" class="link underline">Sign in</a>`,
       body: html`<form class="stack-5" novalidate>
         <div data-slot="msg"></div>
         <div data-slot="dev">${devCode(ctx.state.devOtp)}</div>
@@ -225,6 +225,10 @@ export function verifyEmailPage(ctx) {
     showError(msg);
     try {
       const res = await post('/auth/resend-otp', { email });
+      if (res.alreadyVerified) {
+        showError(msg, callout({ tone: 'ok', title: 'Already verified', body: html`This account is already verified. <a href="/login" class="semibold underline">Click here to sign in</a>.` }));
+        return;
+      }
       showError(msg, callout({ tone: 'ok', body: res.message }));
       dev.innerHTML = String(devCode(res.devOtp));
       cooldown(resendBtn, res.cooldownSeconds ?? 60, ctx);

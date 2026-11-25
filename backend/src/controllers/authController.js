@@ -13,7 +13,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { Session, User } from '../models/index.js';
 import { issueOtp, verifyOtp } from '../services/otp.js';
-import { SESSION_COOKIE, cookieOptions, invalidateSession, startSession } from '../middleware/auth.js';
+import { SESSION_COOKIE, clearSessionCache, cookieOptions, invalidateSession, startSession } from '../middleware/auth.js';
 import { parse } from '../validators/common.js';
 import { AppError } from '../utils/errors.js';
 import { toPublicUser } from '../services/serializers.js';
@@ -62,6 +62,8 @@ export function createAuthController(ctx) {
         await audit(user, 'auth.register', { type: 'user', id: String(user._id) });
       } else if (!existing.emailVerified && !existing.isDemo) {
         otp = await sendCode(existing, 'verify-email');
+      } else {
+        throw new AppError(409, 'ACCOUNT_EXISTS', 'An account with this email address already exists. Please sign in instead.');
       }
       res.status(202).json({
         message: 'If this email can be registered, a 6-digit code has been sent to it. Enter it to activate your account.',
@@ -85,6 +87,13 @@ export function createAuthController(ctx) {
     async resendOtp(req, res) {
       const body = parse(z.object({ email: emailSchema, purpose: z.enum(['verify-email', 'reset-password']).default('verify-email') }), req.body);
       const user = await User.findOne({ email: body.email, isDemo: false });
+      if (body.purpose === 'verify-email' && user?.emailVerified) {
+        return res.json({
+          message: 'This email is already verified. You can sign in directly.',
+          alreadyVerified: true,
+          emailMode: ctx.email.mode,
+        });
+      }
       let otp = null;
       if (user && !user.disabled && (body.purpose === 'reset-password' || !user.emailVerified)) otp = await sendCode(user, body.purpose);
       res.status(202).json({
@@ -148,6 +157,25 @@ export function createAuthController(ctx) {
       }
       res.clearCookie(SESSION_COOKIE, cookieOptions(ctx.env));
       res.json({ message: 'Signed out.' });
+    },
+
+    async logoutAll(req, res) {
+      if (req.user?._id) {
+        await Session.deleteMany({ user: req.user._id });
+        clearSessionCache();
+      }
+      res.clearCookie(SESSION_COOKIE, cookieOptions(ctx.env));
+      res.json({ message: 'Signed out of all devices.' });
+    },
+
+    async devOutbox(_req, res) {
+      if (ctx.email.mode !== 'dev' || ctx.env.NODE_ENV === 'production') {
+        throw new AppError(404, 'NOT_FOUND', 'Dev outbox is not available.');
+      }
+      res.json({
+        notice: 'Development mode: SMTP is not configured. Messages are stored in server memory only.',
+        items: ctx.email.outbox ?? [],
+      });
     },
   };
 }

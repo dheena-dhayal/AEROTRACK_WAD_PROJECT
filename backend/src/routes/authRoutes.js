@@ -18,8 +18,10 @@ export function authRoutes(ctx, limiters) {
 
   // Authentication session login, logout & status
   r.get('/me', ctrl.me);
+  r.get('/dev-outbox', ctrl.devOutbox);
   r.post('/login', limiters.auth, ctrl.login);
   r.post('/logout', requireAuth, ctrl.logout);
+  r.post('/logout-all', requireAuth, ctrl.logoutAll);
 
   // Password reset challenge & confirmation
   r.post('/forgot-password', limiters.auth, ctrl.forgotPassword);

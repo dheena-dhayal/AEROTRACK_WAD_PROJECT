@@ -44,6 +44,7 @@ const ROUTES = [
   { path: '/verify-email', layout: 'bare', load: page(authPages, 'verifyEmailPage') },
   { path: '/forgot-password', layout: 'bare', load: page(authPages, 'forgotPasswordPage') },
   { path: '/reset-password', layout: 'bare', redirect: '/forgot-password' },
+  { path: '/dev-outbox', layout: 'public', load: page(authPages, 'devOutboxPage') },
   { path: '/app', layout: 'bare', redirect: () => (auth.user ? homeFor(auth.user.role) : '/login') },
 
   /* --- Passenger Portal Views --- */
